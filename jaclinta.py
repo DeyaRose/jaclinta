@@ -17,10 +17,12 @@ argc = len(sys.argv)
 note_array = []
 #f = None#open(whole_path, "a")	# the file object
 opt_dict = {'l': 'List notes', 'a': 'Add a note', 'd': 'Delete a note', 'p': 'Purge notes', 'h': 'Show this help menu', 'e': 'Exit'}
+# open the file for appending and reading
 filemode = 'a+'
 
 def main():
 	def create_file():
+		"""Creates and returns the file object for the program."""
 		if not isfile():
 			try:
 				if debug or first_run:
@@ -47,6 +49,7 @@ def main():
 			f = open(whole_path, filemode)
 			return f
 	def list_notes(f):
+		"""Prints the notes to the screen."""
 		if not isfile():
 			print("[!!] File error in list_notes()")
 		else:
@@ -58,6 +61,7 @@ def main():
 				print("{} -- {}".format(count, n.to_string()))
 				count += 1
 	def load_notes(f):
+		"""Loads the notes from file into the array."""
 		out = []
 		if not isfile():
 			print("[!!] File error in load_notes()")
@@ -80,6 +84,7 @@ def main():
 			global loaded
 			loaded = True
 	def add_note(f):
+		"""Adds a note to the array and appends it to the notes.txt file."""
 		if not isfile():
 			print("[!!] File error while adding a note")
 		else:
@@ -96,6 +101,9 @@ def main():
 			note_array.append(addition)
 			print()
 	def purge_notes(f, quiet):
+		"""Purges all notes.
+		f: the file object
+		quiet: whether or not to print confirmation dialogues."""
 		answer = ""
 		global note_array
 		if not quiet:
@@ -106,10 +114,7 @@ def main():
 			answer = input("> ")
 		else:
 			answer = "yes"
-		if answer == "":
-			print()
-			return
-		elif answer == "y" or answer == "ye" or answer == "yes":
+		if answer == "y" or answer == "ye" or answer == "yes":
 			print()
 			if not isfile() and not quiet:
 				print("[!!] File error in purgeNotes")
@@ -131,6 +136,8 @@ def main():
 			print()
 			return
 	def delete_note(f):
+		"""Deletes a note from the array and file.
+		f: the file object"""
 		if len(note_array) == 0:
 			print("[*] There are no notes to delete.")
 			return
@@ -158,17 +165,16 @@ def main():
 							del l
 					if len(note_array) == 0:
 						purge_notes(True)
+					# Creates and stores a backup of the current notes before deleting
 					sb.run(['cp', whole_path, whole_path + '.bak'])
 					i = 0
 					for n in note_array:
 						if i == 0:
 							# The first iteration should not append the file, thus wiping it.
-							# printToFile(f, false, n)
 							print_to_file(f, True, n)
 							# In this case, the bool is True because that means the file is cleared.
 						else:
 							# The subsequent iterations SHOULD append, adding data to the file.
-							# printToFile(f, true, n)
 							print_to_file(f, False, n)
 							# The bool is False here in order to not wipe the whole file.
 						i += 1
@@ -185,6 +191,10 @@ def main():
 				print("[!!] Invalid answer.")
 				return
 	def print_to_file(f, clear, note_in):
+		"""Prints the information to the notes.txt file.
+		f: the file object
+		clear: whether or not to clear the file
+		note_in: the Note to add"""
 		if not isfile():
 			print("[!!] File error in printing to file")
 			return
@@ -200,6 +210,8 @@ def main():
 			# In Java, the output stream was closed.
 			pass
 	def cleanup(f):
+		"""Closes the file.
+		f: the file object"""
 		if isfile():
 			try:
 				f.close()
@@ -211,6 +223,7 @@ def main():
 				del e
 		else:
 			print("[!!] No file to close")
+	# The file object used for the program
 	f = create_file()
 	load_notes(f)
 	# TODO: Replace this with argparse
@@ -252,17 +265,20 @@ def main():
 			print()	# add a space between last selection and the new one
 
 def list_help(usage):
-    msg = "Usage" if usage else "Help"
-    print()
-    print(msg +
-    """:
-      -a\t{;
-      -l\t{}
-      -d\t{}
-      -p\t{}
-      -h\t{}\n""".format(opt_dict['a'], opt_dict['l'], opt_dict['d'], opt_dict['p'], opt_dict['h']))
+	"""Lists the help menu for command-line purposes.
+	usage: if True, print 'usage', if False, print 'Help'"""
+	msg = "Usage" if usage else "Help"
+	print()
+	print(msg +
+	""":
+	  -a\t{;
+	  -l\t{}
+	  -d\t{}
+	  -p\t{}
+	  -h\t{}\n""".format(opt_dict['a'], opt_dict['l'], opt_dict['d'], opt_dict['p'], opt_dict['h']))
 
 def list_menu():
+	"""Lists the menu for interactive purposes."""
 	answer = -1
 	print("""Menu:
 	1.\t{}
@@ -306,9 +322,5 @@ class Note:
 	def to_string(self):
 		return self.get_title() + ":" + self.get_content()
 
-if False:
-	for argument in sys.argv:
-		print("ARGS LIST:\t{}".format(str(argument)))
-		print("ARGS INDX:\t{}".format(sys.argv.index(argument)))
-
+# Enter the program.
 main()
