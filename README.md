@@ -4,4 +4,4 @@ you can take notes using this app
 on the command line interface
 
 
-crazy, i know
+wild, i know
