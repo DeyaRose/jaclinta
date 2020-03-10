@@ -20,6 +20,12 @@ opt_dict = {'l': 'List notes', 'a': 'Add a note', 'd': 'Delete a note', 'p': 'Pu
 # open the file for appending and reading
 filemode = 'a+'
 
+##################
+# Issues (TODO):
+#	Deleting when there's only one note does not work
+#	Adding another note after deleting one gives an error saying the file is closed
+##################
+
 def main():
 	def create_file():
 		"""Creates and returns the file object for the program."""
@@ -49,7 +55,8 @@ def main():
 			f = open(whole_path, filemode)
 			return f
 	def list_notes(f):
-		"""Prints the notes to the screen."""
+		"""Prints the notes to the screen.
+		f: the file object"""
 		if not isfile():
 			print("[!!] File error in list_notes()")
 		else:
@@ -61,7 +68,8 @@ def main():
 				print("{} -- {}".format(count, n.to_string()))
 				count += 1
 	def load_notes(f):
-		"""Loads the notes from file into the array."""
+		"""Loads the notes from file into the array.
+		f: the file object"""
 		out = []
 		if not isfile():
 			print("[!!] File error in load_notes()")
@@ -84,7 +92,8 @@ def main():
 			global loaded
 			loaded = True
 	def add_note(f):
-		"""Adds a note to the array and appends it to the notes.txt file."""
+		"""Adds a note to the array and appends it to the notes.txt file.
+		f: the file object"""
 		if not isfile():
 			print("[!!] File error while adding a note")
 		else:
@@ -99,7 +108,7 @@ def main():
 			addition = Note(in_title, in_content)
 			print(addition.to_string(), file=f)
 			note_array.append(addition)
-			print()
+			print("[*] Note added: " + addition.to_string())
 	def purge_notes(f, quiet):
 		"""Purges all notes.
 		f: the file object
@@ -126,14 +135,16 @@ def main():
 					sb.run(rm_cmd)
 					if not quiet:
 						sb.run(rm_bak)
-					loaded = False
+					#loaded = False
+					# create the file again since it was deleted
+					create_file()
 					load_notes(f)
 					return
 				except Exception as e:
 					print("[!!] General error in purge_notes: " + str(e))
 					del e
 		else:
-			print()
+			print("[i] No notes deleted.")
 			return
 	def delete_note(f):
 		"""Deletes a note from the array and file.
@@ -155,20 +166,28 @@ def main():
 				deletion = note_array[choice]
 				lookup = deletion.get_title() + ":" + deletion.get_content()
 				print("\nRemove note:\n>> %s <<\nat index: %d" % (deletion.to_string(), note_array.index(deletion)))
-				# TODO: Add a confirmation dialogue
+				answer = input("Delete this note? (Y/n) > ")
+				if answer == "y" or answer == "ye" or answer == "yes" or not answer:
+					pass
+				else:
+					return
 				try:
-					str_in = None
+					f.seek(0)
 					line = f.readlines()
 					content = [x.strip() for x in line]
 					for l in content:
-						if l is lookup:
-							del l
+						if l == deletion.to_string():
+							del note_array[note_array.index(deletion)]
 					if len(note_array) == 0:
-						purge_notes(True)
+						if debug:
+							print("[--] Purging")
+						purge_notes(f, True)
+						pass
 					# Creates and stores a backup of the current notes before deleting
 					sb.run(['cp', whole_path, whole_path + '.bak'])
 					i = 0
 					for n in note_array:
+						f.seek(0)
 						if i == 0:
 							# The first iteration should not append the file, thus wiping it.
 							print_to_file(f, True, n)
@@ -185,7 +204,6 @@ def main():
 					print("[!!] Error deleting note: " + str(e))
 					return
 				finally:
-					# in Java, the input stream was closed.
 					pass
 			except:
 				print("[!!] Invalid answer.")
@@ -200,9 +218,8 @@ def main():
 			return
 		try:
 			if clear:
-				f.close()
-				f = open(whole_path, 'w').close()
-				f = open(whole_path, filemode)
+				# TODO: Learn how clear a note without closing it
+				f = clearfile(f, whole_path, filemode)
 			f.write(note_in.to_string() + "\n")
 		except Exception as e:
 			print("[!!] General error in printing to file: " + str(e))
@@ -214,6 +231,7 @@ def main():
 		f: the file object"""
 		if isfile():
 			try:
+				f.flush()
 				f.close()
 			except IOError as e:
 				print("[!!] I/O Error in cleanup: " + str(e))
@@ -298,6 +316,16 @@ def isfile():
 	"""Return whether or not the file (f) exists on the system."""
 	fpath = Path(whole_path)
 	return fpath.is_file()
+
+def clearfile(f, path, fmode):
+	"""Clears the contents of a file.
+	f: the file object
+	path: the path of the file
+	fmode: the mode to open the file in"""
+	f.close()
+	open(path, 'w').close()
+	f = open(path, fmode)
+	return f
 
 class Note:
 	def __init__(self, title="(untitled)", content=""):
